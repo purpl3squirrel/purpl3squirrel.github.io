@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fingerprinting Demo</title>
+</head>
+
+<body>
+    <h1>Browser Fingerprinting Data</h1>
+    <pre id="fingerprintData"></pre>
+
+</body>
+
+<script>
+
+    const endpointUrl = 'https://ddb4-182-77-0-227.ngrok-free.app/slack'; // Replace with your endpoint URL
+    var imageUrl = 'https://images.unsplash.com/photo-1604147706283-d7119b5b822c?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHBhcGVyfGVufDB8fDB8fHww';
+
+    main()
+
+    function main() {
+        let data = {};
+        data['userAgentString'] = navigator.userAgent;
+        data['browserInfo'] = getBrowserInfo();
+        data['osInfo'] = getOSInfo();
+        data['extensionsInfo'] = getInstalledExtensions(function (extensions) {
+            return extensions;
+        });
+        data['timezoneInfo'] = getUserTimeZone();
+        data['browserlanguageInfo'] = getBrowserLanguage();
+
+        (async () => {
+            try {
+                var hash = await generateCanvasHash(imageUrl);
+                data['canvasHash'] = hash;
+            } catch (error) {
+                data['canvasHash'] = '0';
+            }
+        })();
+        data['graphicsInfo'] = getGraphicsCardInfo();
+        data['ramInfo'] = getDeviceRAM() + " GB";
+        data['cpuInfo'] = getCPUDetails();
+        (async () => {
+            try {
+                data['batteryInfo'] = await getBatteryInfo()
+            } catch (error) {
+                data['batteryInfo'] = null
+            }
+        })();
+        data['isTouch'] = isTouchDevice();
+        (async () => {
+            try {
+                data['connectedDevicesInfo'] = await getMediaDevicesInfo()
+            } catch (error) {
+                data['connectedDevicesInfo'] = null
+            }
+        })();
+        data['cookieInfo'] = getCookie();
+        data['refererInfo'] = getPreviousPageUrl();
+        data['cssMediaQueriesInfo'] = getDeviceCapabilities();
+        data['browserSettings'] = getBrowserSettings();
+        data['screenResolution'] = {
+            "width": screen.width,
+            "height": screen.height,
+            "pixelDepth": screen.pixelDepth
+        };
+        getIPAddress().then(ip => {
+            data['ipInfo'] = ip
+        });
+        // console.log(data)
+        // return data;
+        sendData(data, endpointUrl);
+    }
+
+    function getBrowserInfo() {
+
+        // Get the user-agent string
+        var userAgent = navigator.userAgent;
+
+        var browserName;
+        var browserVersion;
+
+        // Detect Chrome
+        if (userAgent.indexOf("Chrome") > -1) {
+            browserName = "Chrome";
+            browserVersion = userAgent.match(/Chrome\/(\d+)/)[1];
+        }
+        // Detect Firefox
+        else if (userAgent.indexOf("Firefox") > -1) {
+            browserName = "Firefox";
+            browserVersion = userAgent.match(/Firefox\/(\d+)/)[1];
+        }
+        // Detect Safari
+        else if (userAgent.indexOf("Safari") > -1) {
+            browserName = "Safari";
+            browserVersion = userAgent.match(/Version\/(\d+)/)[1];
+        }
+        // Detect Internet Explorer
+        else if (userAgent.indexOf("MSIE") > -1 || userAgent.indexOf("Trident") > -1) {
+            browserName = "Internet Explorer";
+            browserVersion = userAgent.match(/(?:MSIE |rv:)(\d+)/)[1];
+        }
+        // Detect Edge
+        else if (userAgent.indexOf("Edge") > -1) {
+            browserName = "Edge";
+            browserVersion = userAgent.match(/Edge\/(\d+)/)[1];
+        }
+        // Detect Opera
+        else if (userAgent.indexOf("Opera") > -1 || userAgent.indexOf("OPR") > -1) {
+            browserName = "Opera";
+            browserVersion = userAgent.match(/(?:Opera\/|OPR\/)(\d+)/)[1];
+        }
+        // Detect other browsers
+        else {
+            browserName = "Unknown";
+            browserVersion = "N/A";
+        }
+
+        return {
+            name: browserName,
+            version: parseInt(browserVersion)
+        };
+
+    }
+
+    function getOSInfo() {
+        var userAgent = navigator.userAgent;
+        var platform = navigator.platform;
+        var os = "Unknown";
+
+        // Detect Windows
+        if (platform.indexOf("Win") !== -1) {
+            os = "Windows";
+            if (userAgent.indexOf("Windows NT 10.0") !== -1) {
+                os += " 10";
+            } else if (userAgent.indexOf("Windows NT 6.3") !== -1) {
+                os += " 8.1";
+            } else if (userAgent.indexOf("Windows NT 6.2") !== -1) {
+                os += " 8";
+            } else if (userAgent.indexOf("Windows NT 6.1") !== -1) {
+                os += " 7";
+            } else if (userAgent.indexOf("Windows NT 6.0") !== -1) {
+                os += " Vista";
+            } else if (userAgent.indexOf("Windows NT 5.1") !== -1) {
+                os += " XP";
+            } else if (userAgent.indexOf("Windows NT 5.0") !== -1) {
+                os += " 2000";
+            } else {
+                os += " (Unknown Version)";
+            }
+        }
+        // Detect Mac OS
+        else if (platform.indexOf("Mac") !== -1) {
+            os = "Mac OS";
+            if (userAgent.indexOf("Mac OS X 10_15") !== -1) {
+                os += " Catalina";
+            } else if (userAgent.indexOf("Mac OS X 10_14") !== -1) {
+                os += " Mojave";
+            } else if (userAgent.indexOf("Mac OS X 10_13") !== -1) {
+                os += " High Sierra";
+            } else if (userAgent.indexOf("Mac OS X 10_12") !== -1) {
+                os += " Sierra";
+            } else if (userAgent.indexOf("Mac OS X 10_11") !== -1) {
+                os += " El Capitan";
+            } else if (userAgent.indexOf("Mac OS X 10_10") !== -1) {
+                os += " Yosemite";
+            } else {
+                os += " (Unknown Version)";
+            }
+        }
+        // Detect Linux
+        else if (platform.indexOf("Linux") !== -1) {
+            os = "Linux";
+        }
+        // Detect Android
+        else if (platform.indexOf("Android") !== -1) {
+            os = "Android";
+        }
+        // Detect iOS
+        else if (platform.indexOf("iPhone") !== -1 || platform.indexOf("iPad") !== -1 || platform.indexOf("iPod") !== -1) {
+            os = "iOS";
+        }
+
+        return os;
+    }
+
+    function getInstalledExtensions(callback) {
+        if (typeof chrome !== 'undefined' && chrome.management && chrome.management.getAll) {
+            // Chrome
+            chrome.management.getAll(function (extensions) {
+                var installedExtensions = extensions.filter(function (extension) {
+                    return extension.type === 'extension';
+                }).map(function (extension) {
+                    return {
+                        id: extension.id,
+                        name: extension.name,
+                        version: extension.version,
+                        browser: 'Chrome'
+                    };
+                });
+                callback(installedExtensions);
+            });
+        } else if (typeof browser !== 'undefined' && browser.management && browser.management.getAll) {
+            // Firefox
+            browser.management.getAll().then(function (extensions) {
+                var installedExtensions = extensions.filter(function (addon) {
+                    return addon.type === 'extension';
+                }).map(function (addon) {
+                    return {
+                        id: addon.id,
+                        name: addon.name,
+                        version: addon.version,
+                        browser: 'Firefox'
+                    };
+                });
+                callback(installedExtensions);
+            }).catch(function (error) {
+                console.error("Error fetching addons:", error);
+                callback([]);
+            });
+        } else {
+            console.log("Browser not supported or extension API not available.");
+            callback([]);
+        }
+    }
+
+    function getUserTimeZone() {
+        // Get the user's current time zone
+        var timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return timeZone;
+    }
+
+    function getBrowserLanguage() {
+        // Get the user's browser language
+        var browserLanguage = navigator.language || navigator.userLanguage;
+
+        return browserLanguage;
+    }
+
+    async function generateCanvasHash(imageUrl) {
+        return new Promise((resolve, reject) => {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var img = new Image();
+            img.crossOrigin = "Anonymous"; // Enable CORS for the image
+
+            img.onload = function () {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                // Get the image data from the canvas
+                var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                // Compute a simple hash based on image data
+                var hash = 0;
+                for (var i = 0; i < imageData.data.length; i++) {
+                    hash = (hash << 5) - hash + imageData.data[i];
+                }
+
+                // Resolve the promise with the hash
+                resolve(hash);
+            };
+
+            img.onerror = function (error) {
+                reject(error);
+            };
+
+            img.src = imageUrl;
+        });
+    }
+
+    function getGraphicsCardInfo() {
+        var canvas = document.createElement('canvas');
+        var gl;
+
+        try {
+            // Try to get the WebGL rendering context
+            gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        } catch (e) {
+            console.error("WebGL not supported or disabled:", e);
+            return null;
+        }
+
+        if (!gl) {
+            console.error("WebGL context could not be initialized.");
+            return null;
+        }
+
+        var renderer = gl.getParameter(gl.RENDERER);
+        var vendor = gl.getParameter(gl.VENDOR);
+        var version = gl.getParameter(gl.VERSION);
+        var shadingLanguageVersion = gl.getParameter(gl.SHADING_LANGUAGE_VERSION);
+        var maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        var maxRenderBufferSize = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+        var maxViewportDims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+        var maxVertexTextureImageUnits = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
+        var maxTextureImageUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+        var maxCombinedTextureImageUnits = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+        var maxVertexAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
+        var maxVaryingVectors = gl.getParameter(gl.MAX_VARYING_VECTORS);
+        var maxVertexUniformVectors = gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS);
+        var maxFragmentUniformVectors = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS);
+
+        // Return an object with collected information
+        return {
+            renderer: renderer,
+            vendor: vendor,
+            version: version,
+            shadingLanguageVersion: shadingLanguageVersion,
+            maxTextureSize: maxTextureSize,
+            maxRenderBufferSize: maxRenderBufferSize,
+            maxViewportDims: maxViewportDims,
+            maxVertexTextureImageUnits: maxVertexTextureImageUnits,
+            maxTextureImageUnits: maxTextureImageUnits,
+            maxCombinedTextureImageUnits: maxCombinedTextureImageUnits,
+            maxVertexAttribs: maxVertexAttribs,
+            maxVaryingVectors: maxVaryingVectors,
+            maxVertexUniformVectors: maxVertexUniformVectors,
+            maxFragmentUniformVectors: maxFragmentUniformVectors
+        };
+    }
+
+    function getDeviceRAM() {
+        if ('deviceMemory' in navigator) {
+            return navigator.deviceMemory;
+        } else {
+            console.warn("navigator.deviceMemory is not supported.");
+            return null;
+        }
+    }
+
+    function getCPUDetails() {
+        var cpuCores = navigator.hardwareConcurrency || 'Unknown';
+        return {
+            cpuCores: cpuCores
+        };
+    }
+
+    function getBatteryInfo() {
+        return new Promise(function (resolve, reject) {
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(function (battery) {
+                    // Initial retrieval of battery status
+                    updateBatteryStatus(battery);
+
+                    // Update battery status whenever it changes
+                    battery.addEventListener('chargingchange', function () {
+                        updateBatteryStatus(battery);
+                    });
+
+                    battery.addEventListener('levelchange', function () {
+                        updateBatteryStatus(battery);
+                    });
+
+                    // Resolve with battery info
+                    resolve({
+                        level: battery.level * 100, // Convert to percentage
+                        charging: battery.charging,
+                        chargingTime: battery.chargingTime,
+                        dischargingTime: battery.dischargingTime
+                    });
+                }).catch(function (error) {
+                    console.error('Battery API error:', error);
+                    reject(error);
+                });
+            } else {
+                console.log('Battery Status API not supported.');
+                reject(new Error('Battery Status API not supported.'));
+            }
+        });
+    }
+
+    function updateBatteryStatus(battery) {
+        var batteryInfo = {
+            level: battery.level * 100, // Convert to percentage
+            charging: battery.charging,
+            chargingTime: battery.chargingTime,
+            dischargingTime: battery.dischargingTime
+        };
+    }
+
+    function isTouchDevice() {
+        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    }
+
+    function getMediaDevicesInfo() {
+        return new Promise(function (resolve, reject) {
+            if ('mediaDevices' in navigator && 'enumerateDevices' in navigator.mediaDevices) {
+                navigator.mediaDevices.enumerateDevices()
+                    .then(function (devices) {
+                        var mediaDevicesInfo = devices.filter(function (device) {
+                            return device.kind === 'videoinput' || device.kind === 'audioinput';
+                        }).map(function (device) {
+                            return {
+                                deviceId: device.deviceId,
+                                kind: device.kind,
+                                label: device.label
+                            };
+                        });
+
+                        resolve(mediaDevicesInfo);
+                    })
+                    .catch(function (error) {
+                        console.error('Error enumerating media devices:', error);
+                        reject(error);
+                    });
+            } else {
+                console.log('MediaDevices API not supported.');
+                reject(new Error('MediaDevices API not supported.'));
+            }
+        });
+    }
+
+    function getCookie(name) {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
+    function getPreviousPageUrl() {
+        return document.referrer || 'No previous page available';
+    }
+
+    function getDeviceCapabilities() {
+        var capabilities = {};
+
+        // Check screen size and orientation
+        var screenSizeQuery = window.matchMedia('(min-width: 768px) and (orientation: landscape)');
+        capabilities.screenSizeMatches = screenSizeQuery.matches;
+
+        // Check dark mode preference
+        var darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        capabilities.darkModeMatches = darkModeQuery.matches;
+
+        // Check touch input support
+        var touchQuery = window.matchMedia('(pointer: coarse)');
+        capabilities.touchSupportMatches = touchQuery.matches;
+
+        return capabilities;
+    }
+
+    function getBrowserSettings() {
+        var settings = {};
+
+        // Do Not Track preference
+        settings.doNotTrack = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack || 'unset');
+
+        // User agent string
+        settings.userAgent = navigator.userAgent;
+
+        // Browser language
+        settings.language = navigator.language || navigator.userLanguage || navigator.browserLanguage || navigator.systemLanguage || '';
+
+        // Browser platform (OS)
+        settings.platform = navigator.platform;
+
+        // Cookies enabled
+        settings.cookiesEnabled = navigator.cookieEnabled;
+
+        // Online status
+        settings.onlineStatus = navigator.onLine;
+
+        // Java enabled (deprecated)
+        settings.javaEnabled = navigator.javaEnabled();
+
+        // Screen resolution
+        settings.screenResolution = {
+            width: screen.width,
+            height: screen.height,
+            pixelDepth: screen.pixelDepth
+        };
+
+        // Browser plugins
+        settings.plugins = Array.from(navigator.plugins).map(function (plugin) {
+            return {
+                name: plugin.name,
+                filename: plugin.filename,
+                description: plugin.description
+            };
+        });
+
+        return settings;
+    }
+
+    function getIPAddress() {
+        return fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => data.ip)
+            .catch(error => {
+                console.error('Error fetching IP address:', error);
+                return 'Unknown';
+            });
+    }
+
+    function sendData(jsonData, endpointUrl) {
+
+        fetch(endpointUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jsonData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    };
+
+    // function sendJSONToSlack(jsonData, webhookUrl) {
+    //     var proxyUrl = 'https://cors-anywhere.herokuapp.com/'; // Example using public cors-anywhere instance
+
+    //     fetch(proxyUrl + webhookUrl, {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify(jsonData),
+    //     })
+    //         .then(response => {
+    //             if (!response.ok) {
+    //                 throw new Error('Failed to send message to Slack');
+    //             }
+    //             console.log('Message sent successfully to Slack');
+    //             return response.json();
+    //         })
+    //         .catch(error => {
+    //             console.error('Error sending message to Slack:', error);
+    //         });
+    // }
+
+</script>
+
+</html>
