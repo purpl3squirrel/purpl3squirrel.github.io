@@ -69,8 +69,7 @@
         getIPAddress().then(ip => {
             data['ipInfo'] = ip
         });
-        // console.log(data)
-        // return data;
+        data['windowSize'] =  getWindowSize();
         sendData(data, endpointUrl);
     }
 
@@ -81,6 +80,15 @@
 
         var browserName;
         var browserVersion;
+
+        // Detect Tor Browser
+        if (userAgent.indexOf('TorBrowser') > -1 || userAgent.indexOf('Tor Browser') > -1) {
+            browserName = 'Tor Browser';
+            const versionMatch = userAgent.match(/TorBrowser\/(\d+\.\d+)/);
+            if (versionMatch) {
+                browserVersion = versionMatch[1];
+            }
+        }
 
         // Detect Chrome
         if (userAgent.indexOf("Chrome") > -1) {
@@ -172,6 +180,10 @@
         }
         // Detect Linux
         else if (platform.indexOf("Linux") !== -1) {
+            // Detecting tails
+            if (userAgent.includes('tor browser') && platform.includes('linux')) {
+                os = "Tails";
+            }
             os = "Linux";
         }
         // Detect Android
@@ -500,6 +512,12 @@
             });
     }
 
+    function getWindowSize() {
+        const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+        const height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        return { width, height };
+    }
+
     function sendData(jsonData, endpointUrl) {
 
         fetch(endpointUrl, {
@@ -518,27 +536,6 @@
             });
     };
 
-    // function sendJSONToSlack(jsonData, webhookUrl) {
-    //     var proxyUrl = 'https://cors-anywhere.herokuapp.com/'; // Example using public cors-anywhere instance
-
-    //     fetch(proxyUrl + webhookUrl, {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify(jsonData),
-    //     })
-    //         .then(response => {
-    //             if (!response.ok) {
-    //                 throw new Error('Failed to send message to Slack');
-    //             }
-    //             console.log('Message sent successfully to Slack');
-    //             return response.json();
-    //         })
-    //         .catch(error => {
-    //             console.error('Error sending message to Slack:', error);
-    //         });
-    // }
 
 </script>
 
